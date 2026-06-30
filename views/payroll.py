@@ -135,6 +135,25 @@ def display_schedule_grid(report: dict):
         st.info("No scheduled shifts for this period")
 
 
+def build_role_summary(report: dict) -> list[dict]:
+    """Aggregate hours and pay by employee role, highest-paid role first."""
+    by_role: dict[str, dict] = {}
+    for emp in report['employees']:
+        if emp.total_hours == 0:
+            continue
+        role = emp.role or "Unassigned"
+        agg = by_role.setdefault(role, {"Role": role, "Employees": 0, "Hours": 0.0, "_pay": 0.0})
+        agg["Employees"] += 1
+        agg["Hours"] += emp.total_hours
+        agg["_pay"] += emp.total_pay
+
+    rows = sorted(by_role.values(), key=lambda r: r["_pay"], reverse=True)
+    for r in rows:
+        r["Hours"] = round(r["Hours"], 2)
+        r["Pay"] = f"${r.pop('_pay'):.2f}"
+    return rows
+
+
 def display_payroll_report(report: dict):
     """Display a payroll report."""
     st.divider()
@@ -152,6 +171,13 @@ def display_payroll_report(report: dict):
     st.caption(f"OT after {settings['overtime_weekly_threshold']}hrs/week or {settings['overtime_daily_threshold']}hrs/day @ {settings['overtime_multiplier']}x")
 
     st.divider()
+
+    # Hours & pay grouped by role
+    role_rows = build_role_summary(report)
+    if role_rows:
+        st.subheader("By Role")
+        st.dataframe(pd.DataFrame(role_rows), use_container_width=True, hide_index=True)
+        st.divider()
 
     # Schedule Grid
     st.subheader("Schedule Grid")

@@ -6,6 +6,7 @@ wiring bugs that the isolated unit tests cannot.
 """
 
 import payroll as pr
+from views.payroll import build_role_summary
 
 
 def test_report_totals_match_seeded_shifts(temp_db):
@@ -48,3 +49,23 @@ def test_overtime_settings_are_respected(temp_db):
     assert henry.total_overtime_hours == 4.0
     # 6 @ $10 + 4 @ $10 * 1.5 = 60 + 60 = 120
     assert henry.total_pay == 120.0
+
+
+def test_role_summary_aggregates_by_role(temp_db):
+    server1 = temp_db.add_employee("Sara", 20.0, role="Server")
+    server2 = temp_db.add_employee("Sam", 20.0, role="Server")
+    cook = temp_db.add_employee("Cody", 25.0, role="Cook")
+    for emp in (server1, server2, cook):
+        temp_db.add_shift(emp, "2026-01-19", "09:00", "17:00", "12:00", "13:00")  # 7h each
+
+    report = pr.calculate_payroll_report("2026-01-19", "2026-01-25")
+    summary = build_role_summary(report)
+    by_role = {row["Role"]: row for row in summary}
+
+    assert by_role["Server"]["Employees"] == 2
+    assert by_role["Server"]["Hours"] == 14.0
+    assert by_role["Server"]["Pay"] == "$280.00"  # 14h @ $20
+    assert by_role["Cook"]["Employees"] == 1
+    assert by_role["Cook"]["Pay"] == "$175.00"  # 7h @ $25
+    # Highest-paid role is listed first.
+    assert summary[0]["Role"] == "Server"

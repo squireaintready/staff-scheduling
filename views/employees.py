@@ -6,6 +6,13 @@ import streamlit as st
 import database as db
 from validation import validate_employee_name
 
+ROLE_OPTIONS = ["Server", "Cook", "Host", "Bartender", "Manager", "Busser", "Dishwasher", "Other"]
+
+
+def _role_index(role: str) -> int:
+    """Index of an employee's stored role within ROLE_OPTIONS (0 if unknown)."""
+    return ROLE_OPTIONS.index(role) if role in ROLE_OPTIONS else 0
+
 
 def render():
     """Employee management page."""
@@ -13,7 +20,7 @@ def render():
 
     # Add new employee section
     st.subheader("Add New Employee")
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
 
     with col1:
         new_name = st.text_input("Name", key="new_emp_name", placeholder="Enter employee name")
@@ -22,6 +29,8 @@ def render():
                                    max_value=500.0, value=10.0, step=0.50,
                                    key="new_emp_rate")
     with col3:
+        new_role = st.selectbox("Role", ROLE_OPTIONS, key="new_emp_role")
+    with col4:
         st.write("")  # Spacer
         st.write("")
         if st.button("Add Employee", type="primary"):
@@ -31,7 +40,7 @@ def render():
                 for msg in errors:
                     st.error(msg)
             else:
-                db.add_employee(new_name.strip(), new_rate)
+                db.add_employee(new_name.strip(), new_rate, new_role)
                 st.success(f"Added {new_name.strip()}")
                 st.rerun()
 
@@ -51,10 +60,11 @@ def render():
     if active_employees:
         st.caption("Click on an employee to edit their details")
         for emp in active_employees:
-            label = f"**{emp['name']}** - ${emp['hourly_rate']:.2f}/hr"
+            role_suffix = f" · {emp['role']}" if emp.get('role') else ""
+            label = f"**{emp['name']}**{role_suffix} - ${emp['hourly_rate']:.2f}/hr"
 
             with st.expander(label):
-                edit_cols = st.columns([2, 2, 1])
+                edit_cols = st.columns([2, 1, 1, 1])
 
                 with edit_cols[0]:
                     new_name = st.text_input(
@@ -74,6 +84,14 @@ def render():
                     )
 
                 with edit_cols[2]:
+                    new_role = st.selectbox(
+                        "Role",
+                        ROLE_OPTIONS,
+                        index=_role_index(emp.get('role', '')),
+                        key=f"emp_role_{emp['id']}"
+                    )
+
+                with edit_cols[3]:
                     st.write("")
                     st.write("")
                     if st.button("Update", key=f"save_emp_{emp['id']}", type="primary"):
@@ -85,7 +103,7 @@ def render():
                                 st.error(msg)
                         else:
                             db.update_employee(emp['id'], name=new_name.strip(),
-                                               hourly_rate=new_rate)
+                                               hourly_rate=new_rate, role=new_role)
                             st.success("Updated!")
                             st.rerun()
 
@@ -102,7 +120,8 @@ def render():
         for emp in inactive_employees:
             col1, col2, col3 = st.columns([3, 1, 1])
             with col1:
-                st.write(f"**{emp['name']}** - ${emp['hourly_rate']:.2f}/hr")
+                role_suffix = f" · {emp['role']}" if emp.get('role') else ""
+                st.write(f"**{emp['name']}**{role_suffix} - ${emp['hourly_rate']:.2f}/hr")
             with col2:
                 if st.button("Reactivate", key=f"reactivate_{emp['id']}"):
                     db.update_employee(emp['id'], is_active=True)

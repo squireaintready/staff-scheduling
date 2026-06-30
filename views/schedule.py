@@ -115,6 +115,8 @@ def render():
             cols = st.columns([1.8] + [1] * 7)
             with cols[0]:
                 st.markdown(f":orange[**{emp['name']}**]")
+                if emp.get('role'):
+                    st.caption(emp['role'])
             for i in range(len(week_dates)):
                 with cols[i + 1]:
                     st.caption("—")
@@ -132,6 +134,8 @@ def render():
             with cols[0]:
                 last_mod = get_last_modified(emp['id'])
                 st.markdown(f":green[**{emp['name']}**]")
+                if emp.get('role'):
+                    st.caption(emp['role'])
                 if last_mod:
                     st.caption(f"updated {last_mod}")
             for i, d in enumerate(week_dates):

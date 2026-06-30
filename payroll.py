@@ -23,6 +23,7 @@ class EmployeePayroll:
     """Payroll summary for an employee."""
     employee_id: int
     employee_name: str
+    role: str
     hourly_rate: float
     daily_breakdown: list[DailyHours]
     total_regular_hours: float
@@ -190,6 +191,7 @@ def calculate_employee_payroll(employee_id: int, start_date: str, end_date: str,
     return EmployeePayroll(
         employee_id=employee_id,
         employee_name=employee['name'],
+        role=employee.get('role') or "",
         hourly_rate=hourly_rate,
         daily_breakdown=daily_breakdown,
         total_regular_hours=round(total_regular, 2),

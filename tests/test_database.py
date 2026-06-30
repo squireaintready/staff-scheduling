@@ -32,6 +32,16 @@ class TestEmployeeCrud:
         assert emp["name"] == "Bob"  # unchanged
         assert emp["hourly_rate"] == 15.0  # changed
 
+    def test_role_is_stored_and_updated(self, temp_db):
+        emp_id = temp_db.add_employee("Iris", 16.0, role="Server")
+        assert temp_db.get_employee(emp_id)["role"] == "Server"
+        temp_db.update_employee(emp_id, role="Manager")
+        assert temp_db.get_employee(emp_id)["role"] == "Manager"
+
+    def test_role_defaults_to_empty_string(self, temp_db):
+        emp_id = temp_db.add_employee("Jack", 14.0)
+        assert temp_db.get_employee(emp_id)["role"] == ""
+
     def test_soft_delete_keeps_row_but_marks_inactive(self, temp_db):
         emp_id = temp_db.add_employee("Carol")
         temp_db.delete_employee(emp_id)

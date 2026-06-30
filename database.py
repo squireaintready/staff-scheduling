@@ -36,6 +36,7 @@ def init_database():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 hourly_rate REAL NOT NULL DEFAULT 10.0,
+                role TEXT NOT NULL DEFAULT '',
                 is_active INTEGER NOT NULL DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -84,6 +85,10 @@ def init_database():
                 "ALTER TABLE shifts ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
             )
 
+        # Migration: Add role column to employees
+        with suppress(sqlite3.OperationalError):
+            cursor.execute("ALTER TABLE employees ADD COLUMN role TEXT NOT NULL DEFAULT ''")
+
         # Settings table for app configuration
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS settings (
@@ -104,13 +109,13 @@ def init_database():
 
 # ============ Employee CRUD ============
 
-def add_employee(name: str, hourly_rate: float = 10.0) -> int:
+def add_employee(name: str, hourly_rate: float = 10.0, role: str = "") -> int:
     """Add a new employee."""
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO employees (name, hourly_rate) VALUES (?, ?)",
-            (name, hourly_rate)
+            "INSERT INTO employees (name, hourly_rate, role) VALUES (?, ?, ?)",
+            (name, hourly_rate, role)
         )
         return cursor.lastrowid
 
@@ -136,7 +141,7 @@ def get_employee(employee_id: int) -> dict | None:
 
 
 def update_employee(employee_id: int, name: str | None = None, hourly_rate: float | None = None,
-                    is_active: bool | None = None) -> bool:
+                    role: str | None = None, is_active: bool | None = None) -> bool:
     """Update an employee."""
     updates: list[str] = []
     values: list[object] = []
@@ -147,6 +152,9 @@ def update_employee(employee_id: int, name: str | None = None, hourly_rate: floa
     if hourly_rate is not None:
         updates.append("hourly_rate = ?")
         values.append(hourly_rate)
+    if role is not None:
+        updates.append("role = ?")
+        values.append(role)
     if is_active is not None:
         updates.append("is_active = ?")
         values.append(1 if is_active else 0)
