@@ -13,6 +13,7 @@ from timeutils import (
     should_have_lunch,
     time_to_label,
 )
+from validation import validate_shift
 
 
 def render():
@@ -57,11 +58,19 @@ def render():
             st.caption("No lunch: shift starts after 4pm or ends before 4pm")
 
         if st.button("Add Template", type="primary"):
-            if new_name.strip():
-                # Force no lunch if shift doesn't qualify
-                actual_no_lunch = no_lunch or should_no_lunch
-                lunch_s = None if actual_no_lunch else label_to_time(new_lunch_start)
-                lunch_e = None if actual_no_lunch else label_to_time(new_lunch_end)
+            # Force no lunch if shift doesn't qualify
+            actual_no_lunch = no_lunch or should_no_lunch
+            lunch_s = None if actual_no_lunch else label_to_time(new_lunch_start)
+            lunch_e = None if actual_no_lunch else label_to_time(new_lunch_end)
+            errors = validate_shift(
+                label_to_time(new_start), label_to_time(new_end), lunch_s, lunch_e
+            )
+            if not new_name.strip():
+                errors = ["Please enter a name", *errors]
+            if errors:
+                for msg in errors:
+                    st.error(msg)
+            else:
                 db.add_shift_template(
                     new_name.strip(),
                     label_to_time(new_start),
@@ -72,8 +81,6 @@ def render():
                 )
                 st.success(f"Added template: {new_name}")
                 st.rerun()
-            else:
-                st.error("Please enter a name")
 
     st.divider()
 
@@ -139,17 +146,24 @@ def render():
                     actual_no_lunch = no_lunch or should_no_lunch
                     l_start = None if actual_no_lunch else label_to_time(edit_lunch_start)
                     l_end = None if actual_no_lunch else label_to_time(edit_lunch_end)
-                    db.update_shift_template(
-                        tmpl['id'],
-                        name=name,
-                        start_time=label_to_time(start),
-                        end_time=label_to_time(end),
-                        lunch_start=l_start,
-                        lunch_end=l_end,
-                        color=color
+                    errors = validate_shift(
+                        label_to_time(start), label_to_time(end), l_start, l_end
                     )
-                    st.success("Saved")
-                    st.rerun()
+                    if errors:
+                        for msg in errors:
+                            st.error(msg)
+                    else:
+                        db.update_shift_template(
+                            tmpl['id'],
+                            name=name,
+                            start_time=label_to_time(start),
+                            end_time=label_to_time(end),
+                            lunch_start=l_start,
+                            lunch_end=l_end,
+                            color=color
+                        )
+                        st.success("Saved")
+                        st.rerun()
             with btn_cols[1]:
                 if st.button("Delete", key=f"del_tmpl_{tmpl['id']}"):
                     db.delete_shift_template(tmpl['id'])

@@ -4,6 +4,7 @@
 import streamlit as st
 
 import database as db
+from validation import validate_employee_name
 
 
 def render():
@@ -24,12 +25,15 @@ def render():
         st.write("")  # Spacer
         st.write("")
         if st.button("Add Employee", type="primary"):
-            if new_name.strip():
-                db.add_employee(new_name.strip(), new_rate)
-                st.success(f"Added {new_name}")
-                st.rerun()
+            existing = [e['name'] for e in db.get_employees(active_only=False)]
+            errors = validate_employee_name(new_name, existing)
+            if errors:
+                for msg in errors:
+                    st.error(msg)
             else:
-                st.error("Please enter a name")
+                db.add_employee(new_name.strip(), new_rate)
+                st.success(f"Added {new_name.strip()}")
+                st.rerun()
 
     st.divider()
 
@@ -73,9 +77,17 @@ def render():
                     st.write("")
                     st.write("")
                     if st.button("Update", key=f"save_emp_{emp['id']}", type="primary"):
-                        db.update_employee(emp['id'], name=new_name, hourly_rate=new_rate)
-                        st.success("Updated!")
-                        st.rerun()
+                        # Exclude this employee's own current name from the duplicate check.
+                        others = [e['name'] for e in all_employees if e['id'] != emp['id']]
+                        errors = validate_employee_name(new_name, others)
+                        if errors:
+                            for msg in errors:
+                                st.error(msg)
+                        else:
+                            db.update_employee(emp['id'], name=new_name.strip(),
+                                               hourly_rate=new_rate)
+                            st.success("Updated!")
+                            st.rerun()
 
                 if st.button("Deactivate Employee", key=f"deact_emp_{emp['id']}"):
                     db.update_employee(emp['id'], is_active=False)

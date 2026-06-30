@@ -14,6 +14,7 @@ from timeutils import (
     should_have_lunch,
     time_to_label,
 )
+from validation import validate_shift
 
 
 def render():
@@ -376,20 +377,35 @@ def render():
 
         # Save button
         if st.button("Save All Changes", type="primary", key="save_emp_schedule"):
+            # Validate every working day before writing anything (all-or-nothing).
+            errors = []
             for date_str, data in day_data.items():
-                if not data['no_work']:
-                    l_start = None if data['no_lunch'] else label_to_time(data['lunch_s'])
-                    l_end = None if data['no_lunch'] else label_to_time(data['lunch_e'])
-                    db.add_shift(
-                        selected_emp_id,
-                        date_str,
-                        label_to_time(data['start']),
-                        label_to_time(data['end']),
-                        l_start,
-                        l_end
-                    )
-                else:
-                    # Delete shift if Off is checked
-                    db.delete_shift(selected_emp_id, date_str)
-            st.success(f"Saved schedule for {selected_emp['name']}!")
-            st.rerun()
+                if data['no_work']:
+                    continue
+                l_start = None if data['no_lunch'] else label_to_time(data['lunch_s'])
+                l_end = None if data['no_lunch'] else label_to_time(data['lunch_e'])
+                for msg in validate_shift(label_to_time(data['start']),
+                                          label_to_time(data['end']), l_start, l_end):
+                    errors.append(f"{date_str}: {msg}")
+
+            if errors:
+                for msg in errors:
+                    st.error(msg)
+            else:
+                for date_str, data in day_data.items():
+                    if not data['no_work']:
+                        l_start = None if data['no_lunch'] else label_to_time(data['lunch_s'])
+                        l_end = None if data['no_lunch'] else label_to_time(data['lunch_e'])
+                        db.add_shift(
+                            selected_emp_id,
+                            date_str,
+                            label_to_time(data['start']),
+                            label_to_time(data['end']),
+                            l_start,
+                            l_end
+                        )
+                    else:
+                        # Delete shift if Off is checked
+                        db.delete_shift(selected_emp_id, date_str)
+                st.success(f"Saved schedule for {selected_emp['name']}!")
+                st.rerun()
