@@ -5,6 +5,7 @@ temporary database, asserting that no page raises. This is the integration
 safety net for the views/ package split.
 """
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -53,3 +54,18 @@ def test_each_page_renders_without_error(temp_db, page):
     at = _start_authenticated(temp_db)
     at.sidebar.radio[0].set_value(page).run()
     assert not at.exception, f"{page} page raised: {at.exception}"
+
+
+def test_payroll_report_renders_with_seeded_data(temp_db):
+    # Seed a shift in the current week so the default weekly report has content,
+    # exercising the By-Role table, the pay-distribution chart, and exports.
+    emp = temp_db.add_employee("Reporter", 20.0, role="Server")
+    temp_db.add_shift(emp, date.today().isoformat(), "09:00", "17:00", "12:00", "13:00")
+
+    at = _start_authenticated(temp_db)
+    at.sidebar.radio[0].set_value("Payroll").run()
+    generate = next(b for b in at.button if b.label == "Generate Report")
+    generate.click().run()
+
+    assert not at.exception
+    assert "payroll_report" in at.session_state

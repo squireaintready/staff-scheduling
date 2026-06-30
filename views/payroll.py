@@ -179,6 +179,17 @@ def display_payroll_report(report: dict):
         st.dataframe(pd.DataFrame(role_rows), use_container_width=True, hide_index=True)
         st.divider()
 
+    # Pay distribution chart
+    chart_rows = [
+        {"Employee": e.employee_name, "Pay ($)": e.total_pay}
+        for e in report['employees'] if e.total_hours > 0
+    ]
+    if chart_rows:
+        st.subheader("Pay Distribution")
+        chart_df = pd.DataFrame(chart_rows).set_index("Employee")
+        st.bar_chart(chart_df, height=300)
+        st.divider()
+
     # Schedule Grid
     st.subheader("Schedule Grid")
     display_schedule_grid(report)
