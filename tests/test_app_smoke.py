@@ -19,9 +19,12 @@ def _is_authed(at: AppTest) -> bool:
     return "authenticated" in at.session_state and at.session_state["authenticated"]
 
 
-def _start_authenticated(temp_db) -> AppTest:
+def _start_authenticated(temp_db, demo_mode=False) -> AppTest:
+    # demo seeding defaults to ON in the app, so disable it here unless a test
+    # explicitly wants the sample data — keeps page tests on a known empty DB.
     at = AppTest.from_file(APP)
     at.secrets["password"] = "test"
+    at.secrets["demo_mode"] = demo_mode
     at.run()
     at.text_input(key="login_password").set_value("test")
     at.button[0].click().run()
@@ -31,6 +34,7 @@ def _start_authenticated(temp_db) -> AppTest:
 def test_auth_gate_blocks_then_allows(temp_db):
     at = AppTest.from_file(APP)
     at.secrets["password"] = "test"
+    at.secrets["demo_mode"] = False
     at.run()
     assert not at.exception
     assert not _is_authed(at)
@@ -71,10 +75,10 @@ def test_payroll_report_renders_with_seeded_data(temp_db):
     assert "payroll_report" in at.session_state
 
 
-def test_demo_mode_seeds_empty_database(temp_db):
+def test_seeds_by_default_when_empty(temp_db):
+    # No demo_mode secret -> seeding is on by default, so an empty DB fills.
     at = AppTest.from_file(APP)
     at.secrets["password"] = "test"
-    at.secrets["demo_mode"] = True
     at.run()
     at.text_input(key="login_password").set_value("test")
     at.button[0].click().run()
@@ -82,7 +86,7 @@ def test_demo_mode_seeds_empty_database(temp_db):
     assert len(temp_db.get_employees(active_only=False)) == 8
 
 
-def test_no_seeding_without_demo_mode(temp_db):
-    # The default smoke login has no demo_mode secret, so the DB stays empty.
-    _start_authenticated(temp_db)
+def test_demo_mode_false_disables_seeding(temp_db):
+    # demo_mode = false opts a real deployment out of auto-seeding.
+    _start_authenticated(temp_db, demo_mode=False)
     assert temp_db.get_employees(active_only=False) == []

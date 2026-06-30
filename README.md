@@ -123,16 +123,16 @@ The app is deployed on [Streamlit Community Cloud](https://streamlit.io/cloud)
 1. Push this repo to your GitHub account.
 2. On Streamlit Community Cloud, **New app → pick this repo → `app.py`**
    (choose Python **3.11+**).
-3. In the app's **Settings → Secrets**, add:
+3. In the app's **Settings → Secrets**, add your password:
    ```toml
    password = "demo"
-   demo_mode = true   # auto-loads sample data whenever the database is empty
    ```
 
 Community Cloud's filesystem is ephemeral, so the SQLite database resets when the
-app restarts. With `demo_mode = true`, `seed_demo.py` repopulates realistic sample
-data on each cold start — so a public demo always looks populated yet self-cleans.
-Omit `demo_mode` for a real deployment and add your own employees in the UI.
+app restarts. The demo **auto-seeds** realistic sample data (via `seed_demo.py`)
+whenever the database is empty, so a public demo always looks populated yet
+self-cleans on each cold start. For a real deployment, add `demo_mode = false` to
+secrets to disable seeding, then add your own employees in the UI.
 
 ## Screenshots
 

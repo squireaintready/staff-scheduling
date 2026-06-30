@@ -32,20 +32,21 @@ PAGES = {
 
 
 def _maybe_seed_demo():
-    """In demo mode, populate sample data when the database is empty.
+    """Populate sample data when the database is empty.
 
-    Gated behind the ``demo_mode`` secret so it never affects a real
-    deployment. Streamlit Community Cloud has an ephemeral filesystem, so this
-    quietly repopulates the demo after each cold start.
+    Enabled by default so the public demo always shows data — Streamlit
+    Community Cloud's filesystem is ephemeral and resets on each cold start.
+    Set ``demo_mode = false`` in secrets to disable this for a real deployment.
     """
     if st.session_state.get("_demo_checked"):
         return
     st.session_state["_demo_checked"] = True
     try:
-        demo_mode = st.secrets.get("demo_mode", False)
+        setting = str(st.secrets.get("demo_mode", "true")).strip().lower()
     except Exception:
-        demo_mode = False
-    if demo_mode and not database.get_employees(active_only=False):
+        setting = "true"
+    disabled = setting in ("false", "0", "no", "off")
+    if not disabled and not database.get_employees(active_only=False):
         import seed_demo
         seed_demo.seed()
 
