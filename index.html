@@ -6,16 +6,19 @@
 <title>Staff Scheduling &amp; Payroll — Samuel Jo</title>
 <meta name="description" content="Staff Scheduling &amp; Payroll — a full-stack web app built to production standards: a pure, fully-tested business-logic core, modular architecture, type-checked and linted in CI, deployed live. By Samuel Jo.">
 <link rel="canonical" href="https://squireaintready.github.io/staff-scheduling/">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#0b1310">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Staff Scheduling &amp; Payroll — Samuel Jo">
 <meta property="og:description" content="A full-stack web app built to production standards — 77 automated tests, CI, type-safe, deployed live.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --coral:#FF4B4B; --ink:#0f172a; --muted:#64748b; --line:#e7ebf0;
-    --bg:#ffffff; --alt:#f7f9fc; --chip:#eef2f7;
+    /* forest — matches samjo.me */
+    --coral:#e0bc8c; --ink:#edf1e7; --muted:#9fb0a3; --line:#243a30;
+    --bg:#0b1310; --alt:#121d17; --chip:#16231c; --soft:#c9d3c7;
+    --display:'Fraunces',Georgia,'Times New Roman',serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
@@ -27,43 +30,44 @@
   .wrap{max-width:920px; margin:0 auto; padding:0 24px}
   a{color:var(--coral); text-decoration:none}
   h1,h2,h3{line-height:1.2; letter-spacing:-0.02em; margin:0}
+  h1,h2{font-family:var(--display); font-optical-sizing:none; font-weight:460}
 
   /* hero */
   .hero{padding:72px 0 40px; text-align:center}
-  .eyebrow{font-size:13px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--coral)}
-  .hero h1{font-size:clamp(34px,6vw,56px); font-weight:800; margin:14px 0 16px}
+  .eyebrow{font-family:var(--mono); font-size:13px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--coral)}
+  .hero h1{font-size:clamp(36px,6vw,60px); font-weight:440; margin:14px 0 16px}
   .hero p{font-size:clamp(17px,2.4vw,20px); color:var(--muted); max-width:660px; margin:0 auto 28px}
   .btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
   .btn{display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:10px;
        font-weight:600; font-size:15px; transition:transform .12s ease, box-shadow .12s ease}
   .btn:hover{transform:translateY(-2px)}
-  .btn-primary{background:var(--coral); color:#fff; box-shadow:0 8px 20px -6px rgba(255,75,75,.55)}
-  .btn-ghost{background:#fff; color:var(--ink); border:1px solid var(--line)}
+  .btn-primary{background:var(--coral); color:var(--bg); box-shadow:0 10px 24px -8px rgba(224,188,140,.45)}
+  .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
 
   .stats{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:30px}
   .stat{background:var(--alt); border:1px solid var(--line); border-radius:999px;
-        padding:7px 16px; font-size:13.5px; font-weight:600; color:#334155}
+        padding:7px 16px; font-size:13.5px; font-weight:600; color:var(--soft)}
   .stat b{color:var(--coral)}
 
   /* browser frame */
   .frame{border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:34px 0;
-         box-shadow:0 30px 60px -30px rgba(15,23,42,.30)}
-  .bar{display:flex; align-items:center; gap:8px; padding:11px 14px; background:#f1f4f8; border-bottom:1px solid var(--line)}
+         box-shadow:0 30px 60px -30px rgba(0,0,0,.55)}
+  .bar{display:flex; align-items:center; gap:8px; padding:11px 14px; background:var(--chip); border-bottom:1px solid var(--line)}
   .dot{width:11px; height:11px; border-radius:50%}
-  .url{margin-left:10px; font-size:12.5px; color:var(--muted); background:#fff; border:1px solid var(--line);
+  .url{margin-left:10px; font-family:var(--mono); font-size:12.5px; color:var(--muted); background:var(--bg); border:1px solid var(--line);
        border-radius:6px; padding:3px 12px}
   .frame img{display:block; width:100%}
 
   /* sections */
   section{padding:46px 0}
-  .label{font-size:13px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px}
-  h2{font-size:clamp(24px,3.6vw,32px); font-weight:800; margin-bottom:8px}
+  .label{font-family:var(--mono); font-size:13px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px}
+  h2{font-size:clamp(24px,3.6vw,32px); font-weight:480; margin-bottom:8px}
   .lede{color:var(--muted); max-width:640px; margin-bottom:26px}
 
   .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(248px,1fr)); gap:16px}
-  .card{background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px;
+  .card{background:var(--alt); border:1px solid var(--line); border-radius:14px; padding:22px;
         transition:border-color .15s ease, transform .15s ease}
-  .card:hover{border-color:#cdd6e2; transform:translateY(-2px)}
+  .card:hover{border-color:color-mix(in srgb, var(--coral) 42%, var(--line)); transform:translateY(-2px)}
   .card .ic{font-size:22px}
   .card h3{font-size:17px; font-weight:700; margin:12px 0 6px}
   .card p{margin:0; color:var(--muted); font-size:14.5px}
@@ -71,21 +75,21 @@
   .alt{background:var(--alt); border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
 
   ul.feat{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:1fr 1fr; gap:14px 28px}
-  ul.feat li{padding-left:26px; position:relative; color:#334155}
+  ul.feat li{padding-left:26px; position:relative; color:var(--soft)}
   ul.feat li:before{content:"→"; position:absolute; left:0; color:var(--coral); font-weight:700}
   ul.feat b{color:var(--ink)}
 
   .pills{display:flex; flex-wrap:wrap; gap:9px}
-  .pill{background:var(--chip); border-radius:8px; padding:7px 13px; font-size:13.5px; font-weight:600; color:#334155}
+  .pill{background:var(--chip); border:1px solid var(--line); border-radius:8px; padding:7px 13px; font-size:13.5px; font-weight:600; color:var(--soft)}
 
   /* blurbs */
-  .copybox{background:#fff; border:1px solid var(--line); border-radius:12px; padding:0; overflow:hidden; margin-bottom:18px}
-  .copyhead{display:flex; justify-content:space-between; align-items:center; padding:13px 18px; background:#fbfcfe; border-bottom:1px solid var(--line)}
+  .copybox{background:var(--alt); border:1px solid var(--line); border-radius:12px; padding:0; overflow:hidden; margin-bottom:18px}
+  .copyhead{display:flex; justify-content:space-between; align-items:center; padding:13px 18px; background:var(--chip); border-bottom:1px solid var(--line)}
   .copyhead h3{font-size:15px}
-  .copybtn{border:1px solid var(--line); background:#fff; border-radius:7px; padding:5px 13px; font-size:12.5px;
-           font-weight:600; color:#334155; cursor:pointer}
+  .copybtn{border:1px solid var(--line); background:transparent; border-radius:7px; padding:5px 13px; font-size:12.5px;
+           font-weight:600; color:var(--muted); cursor:pointer}
   .copybtn:hover{border-color:var(--coral); color:var(--coral)}
-  .copybody{padding:18px; font-size:14.5px; color:#1f2937}
+  .copybody{padding:18px; font-size:14.5px; color:var(--soft)}
   .copybody p{margin:0 0 10px} .copybody p:last-child{margin:0}
   .copybody .b{display:block; padding-left:20px; position:relative; margin-bottom:8px}
   .copybody .b:before{content:"•"; position:absolute; left:4px; color:var(--coral)}
@@ -93,7 +97,7 @@
   footer{padding:40px 0 64px; text-align:center; color:var(--muted); font-size:14px; border-top:1px solid var(--line)}
   footer a{font-weight:600}
   .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0;
-         background:var(--ink); color:#fff; padding:10px 18px; border-radius:8px; font-size:13.5px; font-weight:600;
+         background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:8px; font-size:13.5px; font-weight:600;
          transition:all .25s ease; pointer-events:none}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 </style>
