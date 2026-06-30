@@ -3,12 +3,12 @@ Employee Scheduling & Payroll Application
 Streamlit-based GUI for managing schedules and calculating payroll.
 """
 
-import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta, date, timezone
-from zoneinfo import ZoneInfo
-from typing import List, Dict
 import hmac
+from datetime import UTC, date, datetime, timedelta
+from zoneinfo import ZoneInfo
+
+import pandas as pd
+import streamlit as st
 
 import database as db
 import payroll as pr
@@ -54,7 +54,7 @@ def format_time_12h(time_str: str) -> str:
         if minute == 0:
             return f"{hour}{period}"
         return f"{hour}:{minute:02d}{period}"
-    except:
+    except (ValueError, TypeError):
         return time_str
 
 
@@ -86,7 +86,7 @@ def get_default_lunch(start_time: str, end_time: str) -> tuple:
 
         # Default lunch 3pm-4pm
         return "15:00", "16:00"
-    except:
+    except (ValueError, IndexError, AttributeError):
         return "15:00", "16:00"
 
 
@@ -105,10 +105,7 @@ def get_time_options():
         time_24 = f"{hour:02d}:{minute:02d}"
         hour_12 = hour % 12 or 12
         period = "AM" if hour < 12 else "PM"
-        if minute == 0:
-            label = f"{hour_12}{period}"
-        else:
-            label = f"{hour_12}:{minute:02d}{period}"
+        label = f"{hour_12}{period}" if minute == 0 else f"{hour_12}:{minute:02d}{period}"
         options.append((time_24, label))
     return options
 
@@ -413,10 +410,10 @@ def schedule_page():
             try:
                 dt = datetime.fromisoformat(last_mod)
                 if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
+                    dt = dt.replace(tzinfo=UTC)
                 dt_est = dt.astimezone(ZoneInfo("America/New_York"))
                 return dt_est.strftime("%b %d, %I:%M%p").lower()
-            except:
+            except (ValueError, TypeError):
                 return None
         return None
 
@@ -446,7 +443,7 @@ def schedule_page():
             cols = st.columns([1.8] + [1] * 7)
             with cols[0]:
                 st.markdown(f":orange[**{emp['name']}**]")
-            for i, d in enumerate(week_dates):
+            for i in range(len(week_dates)):
                 with cols[i + 1]:
                     st.caption("—")
 
@@ -517,8 +514,10 @@ def schedule_page():
             def trigger_form_reset():
                 st.session_state['_form_reset'] = True
                 # Clear all form-related session state keys
-                keys_to_clear = list(k for k in st.session_state.keys()
-                                if k.startswith(('nowork_', 'no_lunch_', 'start_', 'end_', 'lunch_s_', 'lunch_e_')))
+                keys_to_clear = [
+                    k for k in st.session_state
+                    if k.startswith(('nowork_', 'no_lunch_', 'start_', 'end_', 'lunch_s_', 'lunch_e_'))
+                ]
                 for k in keys_to_clear:
                     del st.session_state[k]
 
@@ -1025,7 +1024,7 @@ def payroll_page():
         display_payroll_report(report)
 
 
-def build_schedule_grid_data(report: Dict) -> List[Dict]:
+def build_schedule_grid_data(report: dict) -> list[dict]:
     """Build schedule grid data for display and export."""
     start_date = datetime.fromisoformat(report['start_date']).date()
     end_date = datetime.fromisoformat(report['end_date']).date()
@@ -1078,7 +1077,7 @@ def build_schedule_grid_data(report: Dict) -> List[Dict]:
     return grid_data
 
 
-def build_schedule_csv(report: Dict) -> str:
+def build_schedule_csv(report: dict) -> str:
     """Build CSV string for schedule grid."""
     grid_data = build_schedule_grid_data(report)
     if grid_data:
@@ -1087,7 +1086,7 @@ def build_schedule_csv(report: Dict) -> str:
     return ""
 
 
-def display_schedule_grid(report: Dict):
+def display_schedule_grid(report: dict):
     """Display a schedule grid showing shifts for the pay period."""
     grid_data = build_schedule_grid_data(report)
 
@@ -1098,7 +1097,7 @@ def display_schedule_grid(report: Dict):
         st.info("No scheduled shifts for this period")
 
 
-def display_payroll_report(report: Dict):
+def display_payroll_report(report: dict):
     """Display a payroll report."""
     st.divider()
 
