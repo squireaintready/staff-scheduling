@@ -39,3 +39,6 @@ warn_unused_ignores = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Make the top-level modules (database, payroll, app, ...) importable from tests
+# whether pytest is invoked as `pytest` or `python -m pytest`.
+pythonpath = ["."]
