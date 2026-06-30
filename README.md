@@ -1,5 +1,6 @@
 # Staff Scheduling &amp; Payroll
 
+[![Live demo](https://img.shields.io/badge/demo-live-FF4B4B?logo=streamlit&logoColor=white)](https://staff-scheduling.streamlit.app)
 [![CI](https://github.com/squireaintready/staff-scheduling/actions/workflows/ci.yml/badge.svg)](https://github.com/squireaintready/staff-scheduling/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 [![Code style: Ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
@@ -12,8 +13,9 @@ with daily **and** weekly overtime rules, lunch deductions, and per-role reporti
 
 ![Payroll report](docs/payroll.png)
 
-> **Live demo:** deploy your own in ~2 minutes — see [Deployment](#deployment).
-> The demo login password is `demo`; sample data resets on each restart.
+> ### ▶ [**Try the live demo →**](https://staff-scheduling.streamlit.app)
+> Log in with password **`demo`**. Sample data is ephemeral by design and
+> repopulates on each restart.
 
 ---
 
@@ -115,17 +117,22 @@ The suite covers four levels and runs on every push via [GitHub Actions](.github
 
 ## Deployment
 
-The app deploys free on [Streamlit Community Cloud](https://streamlit.io/cloud):
+The app is deployed on [Streamlit Community Cloud](https://streamlit.io/cloud)
+([live demo](https://staff-scheduling.streamlit.app)). To deploy your own:
 
 1. Push this repo to your GitHub account.
-2. On Streamlit Community Cloud, **New app → pick this repo → `app.py`**.
+2. On Streamlit Community Cloud, **New app → pick this repo → `app.py`**
+   (choose Python **3.11+**).
 3. In the app's **Settings → Secrets**, add:
    ```toml
    password = "demo"
+   demo_mode = true   # auto-loads sample data whenever the database is empty
    ```
-4. (Optional) run `seed_demo.py` once, or add employees in the UI. Community Cloud's
-   filesystem is ephemeral, so the SQLite database resets when the app restarts — which
-   keeps a public demo self-cleaning.
+
+Community Cloud's filesystem is ephemeral, so the SQLite database resets when the
+app restarts. With `demo_mode = true`, `seed_demo.py` repopulates realistic sample
+data on each cold start — so a public demo always looks populated yet self-cleans.
+Omit `demo_mode` for a real deployment and add your own employees in the UI.
 
 ## Screenshots
 

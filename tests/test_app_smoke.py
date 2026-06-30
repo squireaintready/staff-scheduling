@@ -69,3 +69,20 @@ def test_payroll_report_renders_with_seeded_data(temp_db):
 
     assert not at.exception
     assert "payroll_report" in at.session_state
+
+
+def test_demo_mode_seeds_empty_database(temp_db):
+    at = AppTest.from_file(APP)
+    at.secrets["password"] = "test"
+    at.secrets["demo_mode"] = True
+    at.run()
+    at.text_input(key="login_password").set_value("test")
+    at.button[0].click().run()
+    assert not at.exception
+    assert len(temp_db.get_employees(active_only=False)) == 8
+
+
+def test_no_seeding_without_demo_mode(temp_db):
+    # The default smoke login has no demo_mode secret, so the DB stays empty.
+    _start_authenticated(temp_db)
+    assert temp_db.get_employees(active_only=False) == []
