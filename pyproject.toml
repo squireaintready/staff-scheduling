@@ -1,0 +1,44 @@
+[project]
+name = "staff-scheduling"
+version = "1.0.0"
+description = "Streamlit shift-scheduling and payroll app for small hospitality teams."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "streamlit>=1.28.0",
+    "pandas>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# Pyflakes (F), pycodestyle (E/W), import sorting (I), pyupgrade (UP),
+# flake8-bugbear (B), flake8-simplify (SIM), flake8-comprehensions (C4).
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4"]
+# Line length is left to formatting judgement — long SQL and CSS string
+# literals read better unwrapped than artificially split.
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+# The pure logic and data layers are fully typed and checked. app.py is
+# excluded: Streamlit's dynamic, decorator-heavy API yields low-signal type
+# noise that isn't worth annotating around.
+files = ["payroll.py", "database.py"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Make the top-level modules (database, payroll, app, ...) importable from tests
+# whether pytest is invoked as `pytest` or `python -m pytest`.
+pythonpath = ["."]

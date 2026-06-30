@@ -3,11 +3,9 @@ Database module for Employee Scheduling & Payroll App.
 Uses SQLite for persistent storage.
 """
 
-import sqlite3
-from datetime import datetime, date, time
-from typing import List, Optional, Tuple
-from contextlib import contextmanager
 import os
+import sqlite3
+from contextlib import contextmanager, suppress
 
 DATABASE_PATH = os.path.join(os.path.dirname(__file__), "scheduling.db")
 
@@ -38,6 +36,7 @@ def init_database():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 hourly_rate REAL NOT NULL DEFAULT 10.0,
+                role TEXT NOT NULL DEFAULT '',
                 is_active INTEGER NOT NULL DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -75,20 +74,20 @@ def init_database():
 
         # Migration: Add lunch columns if they don't exist
         for table in ['shifts', 'shift_templates']:
-            try:
+            with suppress(sqlite3.OperationalError):
                 cursor.execute(f"ALTER TABLE {table} ADD COLUMN lunch_start TEXT")
-            except sqlite3.OperationalError:
-                pass
-            try:
+            with suppress(sqlite3.OperationalError):
                 cursor.execute(f"ALTER TABLE {table} ADD COLUMN lunch_end TEXT")
-            except sqlite3.OperationalError:
-                pass
 
         # Migration: Add last_modified column to shifts
-        try:
-            cursor.execute("ALTER TABLE shifts ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-        except sqlite3.OperationalError:
-            pass
+        with suppress(sqlite3.OperationalError):
+            cursor.execute(
+                "ALTER TABLE shifts ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+            )
+
+        # Migration: Add role column to employees
+        with suppress(sqlite3.OperationalError):
+            cursor.execute("ALTER TABLE employees ADD COLUMN role TEXT NOT NULL DEFAULT ''")
 
         # Settings table for app configuration
         cursor.execute("""
@@ -110,18 +109,18 @@ def init_database():
 
 # ============ Employee CRUD ============
 
-def add_employee(name: str, hourly_rate: float = 10.0) -> int:
+def add_employee(name: str, hourly_rate: float = 10.0, role: str = "") -> int:
     """Add a new employee."""
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO employees (name, hourly_rate) VALUES (?, ?)",
-            (name, hourly_rate)
+            "INSERT INTO employees (name, hourly_rate, role) VALUES (?, ?, ?)",
+            (name, hourly_rate, role)
         )
         return cursor.lastrowid
 
 
-def get_employees(active_only: bool = True) -> List[dict]:
+def get_employees(active_only: bool = True) -> list[dict]:
     """Get all employees."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -132,7 +131,7 @@ def get_employees(active_only: bool = True) -> List[dict]:
         return [dict(row) for row in cursor.fetchall()]
 
 
-def get_employee(employee_id: int) -> Optional[dict]:
+def get_employee(employee_id: int) -> dict | None:
     """Get a single employee by ID."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -141,11 +140,11 @@ def get_employee(employee_id: int) -> Optional[dict]:
         return dict(row) if row else None
 
 
-def update_employee(employee_id: int, name: str = None, hourly_rate: float = None,
-                    is_active: bool = None) -> bool:
+def update_employee(employee_id: int, name: str | None = None, hourly_rate: float | None = None,
+                    role: str | None = None, is_active: bool | None = None) -> bool:
     """Update an employee."""
-    updates = []
-    values = []
+    updates: list[str] = []
+    values: list[object] = []
 
     if name is not None:
         updates.append("name = ?")
@@ -153,6 +152,9 @@ def update_employee(employee_id: int, name: str = None, hourly_rate: float = Non
     if hourly_rate is not None:
         updates.append("hourly_rate = ?")
         values.append(hourly_rate)
+    if role is not None:
+        updates.append("role = ?")
+        values.append(role)
     if is_active is not None:
         updates.append("is_active = ?")
         values.append(1 if is_active else 0)
@@ -190,7 +192,7 @@ def hard_delete_employee(employee_id: int) -> bool:
 # ============ Shift Template CRUD ============
 
 def add_shift_template(name: str, start_time: str, end_time: str,
-                       lunch_start: str = None, lunch_end: str = None,
+                       lunch_start: str | None = None, lunch_end: str | None = None,
                        color: str = "#3498db") -> int:
     """Add a new shift template."""
     with get_connection() as conn:
@@ -202,7 +204,7 @@ def add_shift_template(name: str, start_time: str, end_time: str,
         return cursor.lastrowid
 
 
-def get_shift_templates() -> List[dict]:
+def get_shift_templates() -> list[dict]:
     """Get all shift templates."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -210,12 +212,12 @@ def get_shift_templates() -> List[dict]:
         return [dict(row) for row in cursor.fetchall()]
 
 
-def update_shift_template(template_id: int, name: str = None, start_time: str = None,
-                          end_time: str = None, lunch_start: str = None, lunch_end: str = None,
-                          color: str = None) -> bool:
+def update_shift_template(template_id: int, name: str | None = None, start_time: str | None = None,
+                          end_time: str | None = None, lunch_start: str | None = None,
+                          lunch_end: str | None = None, color: str | None = None) -> bool:
     """Update a shift template."""
-    updates = []
-    values = []
+    updates: list[str] = []
+    values: list[object] = []
 
     if name is not None:
         updates.append("name = ?")
@@ -261,8 +263,8 @@ def delete_shift_template(template_id: int) -> bool:
 # ============ Shift CRUD ============
 
 def add_shift(employee_id: int, shift_date: str, start_time: str,
-              end_time: str, lunch_start: str = None, lunch_end: str = None,
-              template_id: int = None) -> int:
+              end_time: str, lunch_start: str | None = None, lunch_end: str | None = None,
+              template_id: int | None = None) -> int:
     """Add or update a shift for an employee on a date."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -276,7 +278,7 @@ def add_shift(employee_id: int, shift_date: str, start_time: str,
         return cursor.lastrowid
 
 
-def get_shifts_for_week(start_date: str, end_date: str) -> List[dict]:
+def get_shifts_for_week(start_date: str, end_date: str) -> list[dict]:
     """Get all shifts for a date range."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -292,7 +294,7 @@ def get_shifts_for_week(start_date: str, end_date: str) -> List[dict]:
         return [dict(row) for row in cursor.fetchall()]
 
 
-def get_shifts_for_employee(employee_id: int, start_date: str, end_date: str) -> List[dict]:
+def get_shifts_for_employee(employee_id: int, start_date: str, end_date: str) -> list[dict]:
     """Get shifts for a specific employee in a date range."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -304,7 +306,7 @@ def get_shifts_for_employee(employee_id: int, start_date: str, end_date: str) ->
         return [dict(row) for row in cursor.fetchall()]
 
 
-def get_last_modified_for_employee(employee_id: int, start_date: str, end_date: str) -> Optional[str]:
+def get_last_modified_for_employee(employee_id: int, start_date: str, end_date: str) -> str | None:
     """Get the most recent modification time for an employee's shifts in a date range."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -340,7 +342,7 @@ def clear_shifts_for_week(start_date: str, end_date: str) -> int:
 
 # ============ Settings ============
 
-def get_setting(key: str, default: str = None) -> Optional[str]:
+def get_setting(key: str, default: str | None = None) -> str | None:
     """Get a setting value."""
     with get_connection() as conn:
         cursor = conn.cursor()

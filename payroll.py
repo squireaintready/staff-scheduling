@@ -3,9 +3,9 @@ Payroll calculation module.
 Handles hours calculation, overtime, and pay computation.
 """
 
-from datetime import datetime, timedelta, date
-from typing import List, Dict, Tuple
 from dataclasses import dataclass
+from datetime import date, datetime, timedelta
+
 import database as db
 
 
@@ -23,8 +23,9 @@ class EmployeePayroll:
     """Payroll summary for an employee."""
     employee_id: int
     employee_name: str
+    role: str
     hourly_rate: float
-    daily_breakdown: List[DailyHours]
+    daily_breakdown: list[DailyHours]
     total_regular_hours: float
     total_overtime_hours: float
     total_hours: float
@@ -33,14 +34,14 @@ class EmployeePayroll:
     total_pay: float
 
 
-def parse_time(time_str: str) -> Tuple[int, int]:
+def parse_time(time_str: str) -> tuple[int, int]:
     """Parse time string (HH:MM) to hours and minutes."""
     parts = time_str.split(':')
     return int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
 
 
 def calculate_shift_hours(start_time: str, end_time: str,
-                          lunch_start: str = None, lunch_end: str = None) -> float:
+                          lunch_start: str | None = None, lunch_end: str | None = None) -> float:
     """Calculate hours between start and end time, minus lunch break."""
     start_h, start_m = parse_time(start_time)
     end_h, end_m = parse_time(end_time)
@@ -67,7 +68,7 @@ def calculate_shift_hours(start_time: str, end_time: str,
     return round(max(0, diff_minutes) / 60, 2)
 
 
-def calculate_daily_overtime(hours: float, daily_threshold: float) -> Tuple[float, float]:
+def calculate_daily_overtime(hours: float, daily_threshold: float) -> tuple[float, float]:
     """
     Calculate regular and overtime hours for a single day.
 
@@ -80,8 +81,8 @@ def calculate_daily_overtime(hours: float, daily_threshold: float) -> Tuple[floa
         return daily_threshold, round(hours - daily_threshold, 2)
 
 
-def calculate_weekly_overtime(daily_hours: List[float], weekly_threshold: float,
-                              daily_threshold: float) -> List[Tuple[float, float]]:
+def calculate_weekly_overtime(daily_hours: list[float], weekly_threshold: float,
+                              daily_threshold: float) -> list[tuple[float, float]]:
     """
     Calculate regular and overtime hours for a week.
     Applies both daily and weekly overtime rules.
@@ -110,7 +111,7 @@ def calculate_weekly_overtime(daily_hours: List[float], weekly_threshold: float,
     return results
 
 
-def get_week_dates(reference_date: date = None) -> Tuple[str, str, List[str]]:
+def get_week_dates(reference_date: date | None = None) -> tuple[str, str, list[str]]:
     """
     Get the start date, end date, and all dates for a week.
     Week starts on Monday.
@@ -190,6 +191,7 @@ def calculate_employee_payroll(employee_id: int, start_date: str, end_date: str,
     return EmployeePayroll(
         employee_id=employee_id,
         employee_name=employee['name'],
+        role=employee.get('role') or "",
         hourly_rate=hourly_rate,
         daily_breakdown=daily_breakdown,
         total_regular_hours=round(total_regular, 2),
@@ -201,7 +203,7 @@ def calculate_employee_payroll(employee_id: int, start_date: str, end_date: str,
     )
 
 
-def calculate_payroll_report(start_date: str, end_date: str) -> Dict:
+def calculate_payroll_report(start_date: str, end_date: str) -> dict:
     """
     Generate a full payroll report for all employees.
     """
@@ -249,7 +251,7 @@ def calculate_payroll_report(start_date: str, end_date: str) -> Dict:
     }
 
 
-def get_biweekly_dates(reference_date: date = None) -> Tuple[str, str]:
+def get_biweekly_dates(reference_date: date | None = None) -> tuple[str, str]:
     """
     Get start and end dates for a bi-weekly pay period.
     Assumes pay periods start on Monday.
@@ -265,12 +267,8 @@ def get_biweekly_dates(reference_date: date = None) -> Tuple[str, str]:
     reference_monday = date(2025, 1, 6)
     weeks_diff = (week_start - reference_monday).days // 7
 
-    if weeks_diff % 2 == 0:
-        # First week of bi-weekly period
-        start = week_start
-    else:
-        # Second week - go back one week
-        start = week_start - timedelta(days=7)
+    # Even periods start on their own Monday; odd weeks belong to the prior period.
+    start = week_start if weeks_diff % 2 == 0 else week_start - timedelta(days=7)
 
     end = start + timedelta(days=13)
     return start.isoformat(), end.isoformat()
