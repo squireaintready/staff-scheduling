@@ -12,12 +12,16 @@
 <meta property="og:description" content="A full-stack web app built to production standards — 77 automated tests, CI, type-safe, deployed live.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="newsreader-jffj.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* J/F/j/f → Newsreader: Fraunces' eccentric forms (descending-hook J) read off at
+     display sizes, so swap just those four via unicode-range. ~4.7KB, matches samjo.me. */
+  @font-face{font-family:"Display Override";src:url("newsreader-jffj.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+004A,U+0046,U+006A,U+0066}
   :root{
     /* forest — matches samjo.me */
     --coral:#e0bc8c; --ink:#edf1e7; --muted:#9fb0a3; --line:#243a30;
     --bg:#0b1310; --alt:#121d17; --chip:#16231c; --soft:#c9d3c7;
-    --display:'Fraunces',Georgia,'Times New Roman',serif;
+    --display:'Display Override','Fraunces',Georgia,'Times New Roman',serif;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
